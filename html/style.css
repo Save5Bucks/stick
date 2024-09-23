@@ -1,0 +1,82 @@
+html {
+  height: 100vh;
+  width: 100vw;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  overflow: hidden;
+  display: none;
+}
+
+.gear-container {
+  position: absolute;
+  bottom: 3%;
+  left: 50%;
+  font-size: 24px;
+  background-color: rgba(0, 0, 0, 0.5);
+  color: white;
+  padding: 10px;
+  border-radius: 5px;
+  font-family: Arial, sans-serif;
+  display: none;
+  transform: translateX(-50%);
+}
+
+.gear {
+  color: gray;
+  text-shadow: 0 0 5px black;
+  margin: 20px;
+}
+
+.gear.active {
+  color: green;
+}
+
+#rpm-display {
+  position: absolute;
+  bottom: 100px;
+  left: 50%;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.5);
+  color: white;
+  /* padding-right: 20px;
+  padding-left: 20px;
+  padding-top: 10px;
+  padding-bottom: 10px; */
+  padding: 10px;
+  border-radius: 5px;
+  margin: 20px;
+  font-size: 24px;
+  font-family: Arial, sans-serif;
+  transform: translateX(-50%);
+}
+
+.reverse-active {
+  color: red;
+}
+.neutral-active {
+  color: orange;
+}
+
+#tachometer {
+  width: 510px;
+  height: 5px;
+  background-color: rgba(0, 0, 0, 0.5); /* Dark transparent grey */
+  border-radius: 2.5px;
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: none;
+}
+
+#tachometer-fill {
+  height: 100%;
+  background-color: green;
+  border-radius: 2.5px;
+  width: 0%;
+  transition: width 0.1s ease;
+}
