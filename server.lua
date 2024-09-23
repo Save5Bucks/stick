@@ -1,5 +1,5 @@
 local resourceName = GetCurrentResourceName() -- Get the name of the current resource
-local url = 'https://raw.githubusercontent.com/Save5Bucks/race-cam/main/stick/fxmanifest.lua'
+local url = 'https://raw.githubusercontent.com/Save5Bucks/stick/main/stick/fxmanifest.lua'
 local localVersion = GetResourceMetadata(resourceName, 'version', 0) -- Read the version from local fxmanifest
 
 -- Function to check the resource version on server start
