@@ -13,6 +13,7 @@ window.addEventListener('message', function (event) {
         // rpmDisplay.style.display = 'block';
         body.style.display = 'block'; // Show the tachometer
         tach.style.display = 'block';
+        fill.style.display = 'block';
 
         // Update the gear display
         gearDisplay.innerHTML = '';
