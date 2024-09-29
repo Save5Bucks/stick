@@ -47,6 +47,12 @@ You can define flags and tweak other parameters to fit your server's needs.
 
 Once your server is running, players can manually shift gears using the following keys:
 
+command:
+
+```plaintext
+/stick
+```
+
 - **Upshift**: Moves the vehicle to the next gear.
 - **Downshift**: Lowers the vehicle to the previous gear.
 

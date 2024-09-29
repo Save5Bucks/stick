@@ -1,0 +1,2 @@
+ALTER TABLE player_vehicles
+ADD COLUMN tmission BOOLEAN DEFAULT FALSE;
