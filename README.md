@@ -1,54 +1,91 @@
 # 🚗 Manual Transmission Script for FiveM
 
-This FiveM resource enables manual transmission for vehicles, providing realistic driving mechanics where players can manually shift gears and see real-time gear and RPM data on a UI. The script is compatible with the QB-Core framework.
-
-## 🔧 Features:
-
-- 🔄 **Manual Gear Shifting**: Players can shift gears up or down using defined keys.
-- 📊 **Real-Time Gear and RPM Display**: The UI updates dynamically to reflect the current gear and RPM.
-- 🛠 **Automatic & Manual Transmission Modes**: Toggle between automatic and manual modes on demand.
-- 🚗 **Dynamic Gear Detection**: Adapts to the vehicle’s maximum gears by fetching handling data automatically.
+**Version:** 1.0.0  
+**Author:** _Save5Bucks_  
+**Game:** Grand Theft Auto V (FiveM)
 
 ---
 
-## 📂 Script Structure:
+## 📜 Overview
 
-### 1. **Client-Side** (`client.lua`)
-
-Handles the core logic for manual transmission control:
-
-- ⚙️ **fetchMaxGearsFromVehicle()**: Retrieves the maximum gear count from the vehicle's handling data.
-- 🔧 **setManualTransmissionFlag()**: Enables manual transmission using vehicle flags.
-- ⬆️ **Upshift()** & ⬇️ **DownShift()**: Functions that shift gears based on user input.
-- 📡 **sendGearDataToUI()**: Sends the current gear and RPM to the UI for display.
-
-### 2. **Server-Side** (`server.lua`)
-
-- 📝 Performs version checks by comparing the local script version with the latest available version online.
-
-### 3. **Configuration** (`config.lua`)
-
-- 🛠 Holds essential settings such as transmission flags and handling behaviors.
-
-### 4. **UI Assets** (`html` folder)
-
-- 🎨 Contains the front-end elements, including the HTML, CSS, and JavaScript required for the gear and RPM display.
+This resource provides a **manual transmission system** for vehicles in FiveM, offering players more control over their vehicle's performance. With real-time gear and RPM updates displayed via a UI, players can experience a more immersive driving experience.
 
 ---
 
-## 🎮 Commands & Keybinds:
+## 🚀 Installation
 
-- ⬆️ **Upshift**: Increases the current gear when the up arrow is pressed.
-- ⬇️ **Downshift**: Decreases the gear when the down arrow is pressed.
+1. **Download** or **clone** this repository into your `resources` folder.
+
+2. **Ensure the resource** is included in your `server.cfg`:
+
+   ```plaintext
+   ensure stick
+   ```
+
+3. **Configure** your transmission settings in `config.lua`. Adjust the transmission mode and flags according to your preference.
+
+4. **Start your server** and enjoy manual transmission in your vehicles!
 
 ---
 
-## 📦 Installation:
+## 🛠️ Configuration
 
-1. 🗂 Copy the `stick` folder into your FiveM resource directory.
-2. 📝 Add `ensure stick` to your `server.cfg`.
-3. ⚙️ Configure settings in `config.lua` as per your server needs.
+### `config.lua`
+
+This file contains the settings for the manual transmission system, allowing you to customize how the script interacts with the vehicle.
+
+```lua
+Config.ManualTransmissionFlag = 0x400
+Config.AutomaticTransmissionFlag = 0x200
+```
+
+You can define flags and tweak other parameters to fit your server's needs.
 
 ---
 
-Elevate your driving experience by shifting gears manually and take control over vehicle performance with this robust transmission script!
+## 🎮 Usage
+
+Once your server is running, players can manually shift gears using the following keys:
+
+- **Upshift**: Moves the vehicle to the next gear.
+- **Downshift**: Lowers the vehicle to the previous gear.
+
+The script dynamically adjusts to the vehicle's max gears, ensuring a smooth transition through all gears.
+
+---
+
+## 🔧 Features
+
+- **Manual Gear Shifting**: Provides a realistic driving experience by allowing players to manually control their vehicle’s gears.
+- **Dynamic Gear Detection**: Automatically detects the number of gears in the vehicle.
+- **Real-Time Gear & RPM Display**: Displays the current gear and RPM on the UI in real-time.
+- **Automatic & Manual Modes**: Allows players to switch between manual and automatic transmissions.
+
+---
+
+## 🌟 Future Enhancements
+
+- Additional customization options for gear control.
+- Enhanced UI to make it more user-friendly.
+- Support for specialized vehicle types.
+
+---
+
+## 📝 Notes
+
+- Ensure that your server is properly configured to run this resource.
+- Customizing transmission flags may require some testing to optimize vehicle performance.
+
+---
+
+## 📧 Support
+
+For support or questions, feel free to contact me at [flinn6171 - Discord] or visit our community forums.
+
+---
+
+### 🚀 Take full control of your vehicle's transmission with this advanced manual transmission script!
+
+---
+
+_Drive safe, shift smarter!_
