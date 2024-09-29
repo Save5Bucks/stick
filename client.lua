@@ -136,7 +136,7 @@ CreateThread(
                     local speedMph = getSpeedInMph(vehicle)
 
                     if currentGear == 0 then
-                        Citizen.InvokeNative(GetHashKey('SET_VEHICLE_CLUTCH') & 0xFFFFFFFF, vehicle, 0.0)
+                        Citizen.InvokeNative(GetHashKey('SET_VEHICLE_CLUTCH') & 0xFFFFFFFF, vehicle, -1.0)
                     end
 
                     -- Clutch control
@@ -144,7 +144,7 @@ CreateThread(
                         -- Clutch should engage when UpShiftKey is pressed
                         if IsControlJustPressed(0, 21) then
                             print('Clutch pressed')
-                            Citizen.InvokeNative(GetHashKey('SET_VEHICLE_CLUTCH') & 0xFFFFFFFF, vehicle, 0.0)
+                            Citizen.InvokeNative(GetHashKey('SET_VEHICLE_CLUTCH') & 0xFFFFFFFF, vehicle, -1.0)
                         elseif IsControlJustReleased(0, 21) then
                             Citizen.InvokeNative(GetHashKey('SET_VEHICLE_CLUTCH') & 0xFFFFFFFF, vehicle, 1.0)
                         end
