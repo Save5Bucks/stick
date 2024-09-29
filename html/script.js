@@ -4,13 +4,14 @@ window.addEventListener('message', function (event) {
     // const rpmDisplay = document.getElementById('rpm-display');
     const fill = document.getElementById('tachometer-fill');
     const tach = document.getElementById('tachometer');
+    const body = document.body;
 
     // Handle showing and hiding UI elements for both tachometer and gears
     if (data.type === "show") {
         // Show the entire UI for both tachometer and gear display
         gearDisplay.style.display = 'block';
         // rpmDisplay.style.display = 'block';
-        document.body.style.display = 'block'; // Show the tachometer
+        body.style.display = 'block'; // Show the tachometer
         tach.style.display = 'block';
 
         // Update the gear display
@@ -69,9 +70,9 @@ window.addEventListener('message', function (event) {
     if (data.type === "hide") {
         // Hide the entire UI
         gearDisplay.style.display = 'none';
-        rpmDisplay.style.display = 'none';
+        //rpmDisplay.style.display = 'none';
         tach.style.display = 'none';
         fill.style.display = 'none';
-        document.body.style.display = 'none'; // Hide the tachometer
+        body.style.display = 'none'; // Hide the tachometer
     }
 });

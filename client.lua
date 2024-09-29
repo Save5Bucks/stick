@@ -1,10 +1,12 @@
+local QBCore = exports['qb-core']:GetCoreObject()
+
 local currentGear = 0
 local maxGears = nil
 local manualTransmissionActive = false
 local vehicle = nil
 local MANUAL_TRANSMISSION_FLAGS = 0x400
 local AUTOMATIC_TRANSMISSION_FLAGS = 0x200
-local isLoggedIn = false
+local isLoggedIn = true
 
 -- Fetch max gears from vehicle's handling data
 function fetchMaxGearsFromVehicle()
@@ -103,6 +105,7 @@ RegisterCommand(
     function()
         if manualTransmissionActive then
             ManualOff()
+            hideUI()
         else
             activateManualTransmission()
         end
@@ -118,7 +121,7 @@ AddEventHandler(
     end
 )
 
--- Handle key presses for shifting gears
+-- Handle key presses for shifting gears and clutch management
 CreateThread(
     function()
         while true do
@@ -126,64 +129,73 @@ CreateThread(
             if isLoggedIn then
                 local vehicle = GetVehiclePedIsIn(PlayerPedId(), false)
 
-                if manualTransmissionActive == true then
-                    -- GET_ENTITY_SPEED_VECTOR
+                -- Ensure the vehicle exists and manual transmission is active
+                if vehicle ~= 0 and manualTransmissionActive then
+                    -- Get current speed and speed vector
                     local speedV = GetEntitySpeedVector(vehicle, true)
-                    -- print(speedV)
                     local speedMph = getSpeedInMph(vehicle)
-                    print(IsControlJustPressed(0, 21))
-                    if currentGear ~= 0 and IsControlJustPressed(0, 21) or currentGear == 0 then
-                        print('Clutch', IsControlJustPressed(0, 21))
-                        Citizen.InvokeNative(GetHashKey('SET_VEHICLE_CLUTCH') & 0xFFFFFFFF, vehicle, -1.0)
-                    else
-                        Citizen.InvokeNative(GetHashKey('SET_VEHICLE_CLUTCH') & 0xFFFFFFFF, vehicle, 1.0)
+
+                    if currentGear == 0 then
+                        Citizen.InvokeNative(GetHashKey('SET_VEHICLE_CLUTCH') & 0xFFFFFFFF, vehicle, 0.0)
                     end
 
+                    -- Clutch control
+                    if currentGear ~= 0 then
+                        -- Clutch should engage when UpShiftKey is pressed
+                        if IsControlJustPressed(0, 21) then
+                            print('Clutch pressed')
+                            Citizen.InvokeNative(GetHashKey('SET_VEHICLE_CLUTCH') & 0xFFFFFFFF, vehicle, 0.0)
+                        elseif IsControlJustReleased(0, 21) then
+                            Citizen.InvokeNative(GetHashKey('SET_VEHICLE_CLUTCH') & 0xFFFFFFFF, vehicle, 1.0)
+                        end
+                    end
+
+                    -- Enable or disable controls based on gear and speed
                     if currentGear >= 0 and speedMph > 0 and speedV.y > 0 then
                         EnableControlAction(0, 72, true) -- Enable S for braking or reverse
                     else
                         DisableControlAction(0, 72, true) -- Disable S for braking or reverse
                     end
 
+                    -- Special case for reverse gear
                     if currentGear == -1 then
                         EnableControlAction(0, 72, true) -- Enable S for reverse
                         DisableControlAction(0, 71, true) -- Disable W for braking or reverse
                     end
 
-                    -- Tachometer Update
+                    -- Tachometer and gear display update
                     if displayRPM then
                         local rpm = (GetVehicleCurrentRpm(vehicle) * 10000) - 1000 -- Convert to RPM
                         SendNUIMessage({action = 'updateRPM', rpm = rpm})
                     end
 
-                    if vehicle ~= 0 and manualTransmissionActive then
-                        -- Upshift using Right Shift
-                        if IsControlJustPressed(0, Config.UpShiftKey) then
-                            Upshift()
-                        end
-                        -- Downshift using Right Control
-                        if IsControlJustPressed(0, Config.DownShiftKey) then
-                            DownShift()
-                        end
-                        --local rpm = (Citizen.InvokeNative(GetHashKey('GET_VEHICLE_DASHBOARD_RPM') & 0xFFFFFFFF, vehicle) / 1000000)
-                        --local rpm = mapRPM(rpm)
-                        local rpm = (GetVehicleCurrentRpm(vehicle) * 10000) - 1000 -- Convert to RPM
-                        SendNUIMessage({type = 'updateRPM', rpm = rpm})
-                        sendGearDataToUI()
-                        local clutch = Citizen.InvokeNative(GetHashKey('GET_VEHICLE_CLUTCH') & 0xFFFFFFFF, vehicle)
-                    -- print(clutch)
+                    -- Handle gear shifts
+                    if IsControlJustPressed(0, Config.UpShiftKey) then
+                        Upshift()
+                    elseif IsControlJustPressed(0, Config.DownShiftKey) then
+                        DownShift()
                     end
 
-                    -- Exit vehicle handling
-                    if manualTransmissionActive and vehicle == 0 then
+                    -- Send gear data and update RPM
+                    local rpm = (GetVehicleCurrentRpm(vehicle) * 10000) - 1000 -- Convert to RPM
+                    SendNUIMessage({type = 'updateRPM', rpm = rpm})
+                    sendGearDataToUI()
+                elseif manualTransmissionActive then
+                    -- Exit vehicle handling: deactivate manual transmission when not in a vehicle
+                    if vehicle == 0 then
                         ManualOff()
+                    else
+                        -- Reset car to automatic transmission
+                        SetVehicleHandlingInt(
+                            vehicle,
+                            'CCarHandlingData',
+                            'strAdvancedFlags',
+                            AUTOMATIC_TRANSMISSION_FLAGS
+                        )
+                        EnableControlAction(0, 72, true) -- Enable S for reverse
+                        EnableControlAction(0, 71, true) -- Enable W for braking or reverse
+                        Citizen.InvokeNative(GetHashKey('SET_VEHICLE_CLUTCH') & 0xFFFFFFFF, vehicle, 1.0)
                     end
-                else
-                    -- Reset car to automatic
-                    SetVehicleHandlingInt(vehicle, 'CCarHandlingData', 'strAdvancedFlags', AUTOMATIC_TRANSMISSION_FLAGS)
-                    EnableControlAction(0, 72, true) -- Enable S for reverse
-                    EnableControlAction(0, 71, true) -- Enable W for braking or reverse
-                    Citizen.InvokeNative(GetHashKey('SET_VEHICLE_CLUTCH') & 0xFFFFFFFF, vehicle, 1.0)
                 end
             end
         end

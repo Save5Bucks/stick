@@ -1,5 +1,5 @@
 local resourceName = GetCurrentResourceName() -- Get the name of the current resource
-local url = 'https://raw.githubusercontent.com/Save5Bucks/stick/main/stick/fxmanifest.lua'
+local url = 'https://raw.githubusercontent.com/Save5Bucks/race-cam/refs/heads/main/fxmanifest.lua'
 local localVersion = GetResourceMetadata(resourceName, 'version', 0) -- Read the version from local fxmanifest
 
 -- Function to check the resource version on server start
@@ -8,7 +8,7 @@ local function version_check()
     PerformHttpRequest(
         url,
         function(err, text, headers)
-            print('\n')
+            print('################## SAVE5BUCKS ##################')
             print('[INFO] Performing Update Check for: ' .. resourceName)
 
             if text ~= nil and err == 200 then
@@ -19,18 +19,20 @@ local function version_check()
                     -- Compare the local and remote versions
                     if localVersion == remoteVersion then
                         print('[INFO] ' .. resourceName .. ' is up-to-date (Version: ' .. localVersion .. ').')
+                        print('################## SAVE5BUCKS ##################')
                     else
-                        print('\n')
                         print('[WARNING] A newer version of ' .. resourceName .. ' is available!')
                         print('[INFO] Current Version: ' .. localVersion)
                         print('[INFO] Latest Version : ' .. remoteVersion)
-                        print('\n')
+                        print('################## SAVE5BUCKS ##################')
                     end
                 else
                     print('[ERROR] Unable to find the version number in the remote fxmanifest.lua.')
+                    print('################## SAVE5BUCKS ##################')
                 end
             else
                 print('[ERROR] Unable to retrieve the remote fxmanifest.lua. HTTP Error Code: ' .. tostring(err))
+                print('################## SAVE5BUCKS ##################')
             end
         end,
         'GET',

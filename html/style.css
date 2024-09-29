@@ -1,6 +1,6 @@
 html {
-  height: 100vh;
-  width: 100vw;
+  height: 99vh;
+  width: 99vw;
 }
 
 body {
@@ -9,18 +9,18 @@ body {
   background: transparent;
   overflow: hidden;
   display: none;
+  font-family: Arial, Helvetica, sans-serif; /* Set font globally */
 }
 
 .gear-container {
   position: absolute;
   bottom: 3%;
   left: 50%;
-  font-size: 24px;
+  font-size: 1.5rem; /* Use rem for better scalability */
   background-color: rgba(0, 0, 0, 0.5);
   color: white;
   padding: 10px;
   border-radius: 5px;
-  font-family: Arial, sans-serif;
   display: none;
   transform: translateX(-50%);
 }
@@ -42,21 +42,17 @@ body {
   justify-content: center;
   background-color: rgba(0, 0, 0, 0.5);
   color: white;
-  /* padding-right: 20px;
-  padding-left: 20px;
-  padding-top: 10px;
-  padding-bottom: 10px; */
-  padding: 10px;
+  padding: 10px 20px; /* Shorthand for padding */
   border-radius: 5px;
   margin: 20px;
-  font-size: 24px;
-  font-family: Arial, sans-serif;
+  font-size: 1.5rem; /* Use rem for better scalability */
   transform: translateX(-50%);
 }
 
 .reverse-active {
   color: red;
 }
+
 .neutral-active {
   color: orange;
 }
@@ -64,7 +60,7 @@ body {
 #tachometer {
   width: 510px;
   height: 5px;
-  background-color: rgba(0, 0, 0, 0.5); /* Dark transparent grey */
+  background-color: rgba(0, 0, 0, 0.5);
   border-radius: 2.5px;
   position: absolute;
   bottom: 20px;
