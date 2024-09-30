@@ -1,0 +1,97 @@
+### Using the Exports
+
+This script provides several exports for use in other resources, allowing you to integrate the manual transmission system into your own scripts.
+
+---
+
+### 1. **Activate Manual Transmission**
+
+**Description**: This export forces the manual transmission system to activate for the player's current vehicle.  
+**Usage**: Can be called from another script when you want to switch the vehicle's transmission to manual.
+
+**Code**:
+```lua
+-- Activate manual transmission for the player's current vehicle
+exports['stick']:activateManualTransmission()
+```
+
+---
+
+### 2. **Deactivate Manual Transmission**
+
+**Description**: This export forces the manual transmission system to deactivate for the player's current vehicle, returning it to automatic mode.  
+**Usage**: Call this when you want to disable manual transmission.
+
+**Code**:
+```lua
+-- Deactivate manual transmission for the player's current vehicle
+exports['stick']:ManualOff()
+```
+
+---
+
+### 3. **Set Vehicle Transmission via Database (Automatic)**
+
+**Description**: This export allows you to permanently set a vehicle to **automatic transmission** (using a `0` value) in the database based on the vehicle’s license plate.  
+**Usage**: Can be used in scripts where you manage vehicle sales or other permanent transmission changes.
+
+**Code**:
+```lua
+-- Set vehicle to automatic transmission (0)
+local vehicle = GetVehiclePedIsIn(PlayerPedId(), false)
+local plate = GetVehicleNumberPlateText(vehicle)
+exports['stick']:setVehicleTransmission(plate, 0)
+```
+
+---
+
+### 4. **Set Vehicle Transmission via Database (Manual)**
+
+**Description**: This export allows you to permanently set a vehicle to **manual transmission** (using a `1` value) in the database based on the vehicle’s license plate.  
+**Usage**: Can be used for permanent changes such as installing manual transmissions in mechanic scripts or dealership scripts.
+
+**Code**:
+```lua
+-- Set vehicle to manual transmission (1)
+local vehicle = GetVehiclePedIsIn(PlayerPedId(), false)
+local plate = GetVehicleNumberPlateText(vehicle)
+exports['stick']:setVehicleTransmission(plate, 1)
+```
+
+---
+
+### Example Usage in a Mechanic Script
+
+You can integrate the exports into any mechanic job script for transmission installation:
+
+```lua
+RegisterNetEvent('mechanic:installManualTransmission')
+AddEventHandler('mechanic:installManualTransmission', function()
+    local vehicle = GetVehiclePedIsIn(PlayerPedId(), false)
+    local plate = GetVehicleNumberPlateText(vehicle)
+    -- Mechanic installs manual transmission
+    exports['stick']:setVehicleTransmission(plate, 1)
+    print('Manual transmission installed!')
+end)
+```
+
+---
+
+### Notes
+
+- Make sure the license plate text is valid and matches the vehicle in your database.
+- If `Config.alwaysStick` is set to `true`, manual transmission will automatically be applied to all vehicles, regardless of the database.
+
+---
+
+### Future Enhancements
+
+- Support for additional custom key mappings.
+- Advanced clutch and shifting mechanics.
+- Compatibility with specific vehicle types for better transmission control.
+
+---
+
+### Support
+
+For further assistance, please contact the script author or refer to the GitHub page for updates and issue tracking.
