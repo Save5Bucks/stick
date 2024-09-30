@@ -6,7 +6,7 @@ Config.DatabaseName = 'proper_rp' -- Replace with your actual database name
 -- Key Configuration
 Config.UpShiftKey = 27 -- Up Arrow
 Config.DownShiftKey = 173 -- Down Arrow
-Config.alwaysStick = true -- Set this to true to make all cars manual by default
+Config.alwaysStick = false -- Set this to true to make all cars manual by default
 
 -- EXPORTS TO USE IN OTHER SCRIPTS NO SQL REQUIRED TEMPORARY --
 

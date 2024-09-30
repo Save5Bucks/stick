@@ -8,13 +8,7 @@ local MANUAL_TRANSMISSION_FLAGS = 0x400
 local AUTOMATIC_TRANSMISSION_FLAGS = 0x200
 local checkPlate = false -- Flag to avoid repeated checks
 local displayRPM = true -- Ensure RPM display is active
-
--- Config value to determine if all cars are manual
-Config = {
-    alwaysStick = false, -- Change this to true for all cars to be manual
-    UpShiftKey = 172, -- Arrow Up by default
-    DownShiftKey = 173 -- Arrow Down by default
-}
+local alwaysStickActive = false -- Toggle for alwaysStick activation
 
 -- Fetch max gears from vehicle's handling data
 function fetchMaxGearsFromVehicle()
@@ -89,7 +83,7 @@ function handleTransmissionControl()
         SendNUIMessage({type = 'updateRPM', rpm = rpm})
     end
 
-    -- Handle gear shifts
+    -- Handle gear shifts using Config
     if IsControlJustPressed(0, Config.UpShiftKey) then
         Upshift()
     elseif IsControlJustPressed(0, Config.DownShiftKey) then
@@ -176,6 +170,10 @@ function ManualOff()
     print('Manual transmission deactivated.')
 end
 
+-- EXPORTS TO USE IN OTHER SCRIPTS NO SQL REQUIRED --
+exports('activateManualTransmission', activateManualTransmission)
+exports('ManualOff', ManualOff)
+
 -- Toggle manual transmission
 RegisterCommand(
     'stick',
@@ -198,9 +196,16 @@ CreateThread(
 
             -- Check if player is the driver
             if vehicle ~= 0 and GetPedInVehicleSeat(vehicle, -1) == PlayerPedId() then
-                -- If alwaysStick is true, force manual transmission for all vehicles
+                -- If alwaysStick is true, activate manual transmission for all vehicles
                 if Config.alwaysStick then
-                    activateManualTransmission() -- Activate manual for all vehicles
+                    if not manualTransmissionActive and not alwaysStickActive then
+                        activateManualTransmission() -- Force manual transmission for all vehicles
+                        alwaysStickActive = true
+                        manualTransmissionActive = true
+                        sendGearDataToUI() -- Update UI immediately when activated
+                    end
+                    -- Call transmission control to handle clutch, gears, and display updates
+                    handleTransmissionControl()
                 else
                     -- Ensure the vehicle exists and plate check hasn't been done
                     if not checkPlate then
@@ -220,12 +225,13 @@ CreateThread(
                         handleTransmissionControl() -- Call the new function to manage clutch, gears, and display updates
                     end
                 end
-            end
-
-            -- Reset plate check if player leaves the vehicle or isn't the driver
-            if vehicle == 0 or GetPedInVehicleSeat(vehicle, -1) ~= PlayerPedId() then
-                checkPlate = false
-                ManualOff() -- Ensure transmission is deactivated and UI is hidden when leaving the vehicle
+            else
+                -- Player is not in the driver's seat or has left the vehicle
+                if manualTransmissionActive or alwaysStickActive then
+                    ManualOff() -- Ensure transmission is deactivated and UI is hidden when leaving the vehicle
+                    checkPlate = false
+                    alwaysStickActive = false
+                end
             end
         end
     end
