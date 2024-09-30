@@ -3,7 +3,7 @@ game 'gta5'
 
 author 'Save5Bucks'
 description 'Manual Transmission Script using QB-Core'
-version '1.0.2'
+version '1.0.5'
 
 -- Client scripts
 client_scripts {
@@ -13,6 +13,7 @@ client_scripts {
 
 -- Server scripts (if needed in the future)
 server_scripts {
+    '@oxmysql/lib/MySQL.lua', -- MySQL library change this for your which ever resource you use
     'server.lua'
 }
 
@@ -29,3 +30,5 @@ files {
 dependencies {
     'qb-core'
 }
+
+lua54 'yes'

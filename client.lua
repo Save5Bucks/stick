@@ -6,7 +6,15 @@ local manualTransmissionActive = false
 local vehicle = nil
 local MANUAL_TRANSMISSION_FLAGS = 0x400
 local AUTOMATIC_TRANSMISSION_FLAGS = 0x200
-local isLoggedIn = true
+local checkPlate = false -- Flag to avoid repeated checks
+local displayRPM = true -- Ensure RPM display is active
+
+-- Config value to determine if all cars are manual
+Config = {
+    alwaysStick = false, -- Change this to true for all cars to be manual
+    UpShiftKey = 172, -- Arrow Up by default
+    DownShiftKey = 173 -- Arrow Down by default
+}
 
 -- Fetch max gears from vehicle's handling data
 function fetchMaxGearsFromVehicle()
@@ -25,12 +33,78 @@ function setManualTransmissionFlag()
     end
 end
 
+-- Check the vehicle's transmission based on its plate
+function checkVehicleTransmission(plate)
+    TriggerServerEvent('checkVehicleTransmission', plate) -- Call the server to check the transmission type by plate
+end
+
+-- Receive the transmission type from the server
+RegisterNetEvent('receiveTransmissionType')
+AddEventHandler(
+    'receiveTransmissionType',
+    function(isManual)
+        if isManual then
+            activateManualTransmission() -- Make sure the transmission is activated properly
+        else
+            ManualOff()
+        end
+    end
+)
+
+-- Handle transmission control logic
+function handleTransmissionControl()
+    local speedV = GetEntitySpeedVector(vehicle, true)
+    local speedMph = getSpeedInMph(vehicle)
+
+    -- Clutch control for currentGear = 0
+    if currentGear == 0 then
+        Citizen.InvokeNative(GetHashKey('SET_VEHICLE_CLUTCH') & 0xFFFFFFFF, vehicle, -1.0)
+    end
+
+    -- Clutch control for non-zero gears
+    if currentGear ~= 0 then
+        if IsControlJustPressed(0, 21) then
+            Citizen.InvokeNative(GetHashKey('SET_VEHICLE_CLUTCH') & 0xFFFFFFFF, vehicle, -1.0)
+        elseif IsControlJustReleased(0, 21) then
+            Citizen.InvokeNative(GetHashKey('SET_VEHICLE_CLUTCH') & 0xFFFFFFFF, vehicle, 1.0)
+        end
+    end
+
+    -- Enable or disable controls based on gear and speed
+    if currentGear >= 0 and speedMph > 0 and speedV.y > 0 then
+        EnableControlAction(0, 72, true) -- Enable S for braking or reverse
+    else
+        DisableControlAction(0, 72, true) -- Disable S for braking or reverse
+    end
+
+    -- Special case for reverse gear
+    if currentGear == -1 then
+        EnableControlAction(0, 72, true) -- Enable S for reverse
+        DisableControlAction(0, 71, true) -- Disable W for braking or reverse
+    end
+
+    -- Tachometer and gear display update
+    if displayRPM then
+        local rpm = GetVehicleCurrentRpm(vehicle) * 10000 - 1000 -- Convert to RPM
+        SendNUIMessage({type = 'updateRPM', rpm = rpm})
+    end
+
+    -- Handle gear shifts
+    if IsControlJustPressed(0, Config.UpShiftKey) then
+        Upshift()
+    elseif IsControlJustPressed(0, Config.DownShiftKey) then
+        DownShift()
+    end
+
+    -- Send gear data and update RPM
+    sendGearDataToUI()
+end
+
 -- Upshift gear
 function Upshift()
     if vehicle and DoesEntityExist(vehicle) and manualTransmissionActive and maxGears then
         if currentGear < maxGears then
             currentGear = currentGear + 1
-            print(currentGear)
             Citizen.InvokeNative(GetHashKey('SET_VEHICLE_CURRENT_GEAR') & 0xFFFFFFFF, vehicle, currentGear)
             sendGearDataToUI() -- Update the UI
         end
@@ -42,7 +116,6 @@ function DownShift()
     if vehicle and DoesEntityExist(vehicle) and manualTransmissionActive then
         if currentGear > -1 then
             currentGear = currentGear - 1
-            print(currentGear)
             Citizen.InvokeNative(GetHashKey('SET_VEHICLE_CURRENT_GEAR') & 0xFFFFFFFF, vehicle, currentGear)
             sendGearDataToUI() -- Update the UI
         end
@@ -51,24 +124,27 @@ end
 
 -- Send gear and RPM data to the UI
 function sendGearDataToUI()
-    SendNUIMessage(
-        {
-            type = 'show',
-            maxGears = maxGears,
-            currentGear = currentGear,
-            rpm = GetVehicleCurrentRpm(vehicle) * 10000 - 1000 -- Convert to RPM and send it to the UI
-        }
-    )
+    if vehicle and DoesEntityExist(vehicle) then
+        local rpm = GetVehicleCurrentRpm(vehicle) * 10000 - 1000 -- Convert to RPM and send it to the UI
+        SendNUIMessage(
+            {
+                type = 'show', -- Correct type for showing UI data
+                maxGears = maxGears,
+                currentGear = currentGear,
+                rpm = rpm
+            }
+        )
+    end
 end
 
 -- Show gear UI
 function showUI()
-    SendNUIMessage({type = 'show'})
+    SendNUIMessage({type = 'show'}) -- Ensure this message shows the UI
 end
 
 -- Hide gear UI
 function hideUI()
-    SendNUIMessage({type = 'hide'})
+    SendNUIMessage({type = 'hide'}) -- Ensure this message hides the UI
 end
 
 -- Activate manual transmission
@@ -78,6 +154,7 @@ function activateManualTransmission()
     if vehicle ~= 0 then
         fetchMaxGearsFromVehicle()
         setManualTransmissionFlag()
+        Citizen.InvokeNative(GetHashKey('SET_VEHICLE_CLUTCH') & 0xFFFFFFFF, vehicle, 1.0) -- Ensure clutch is engaged for movement
         showUI() -- Ensure UI is shown when manual transmission is activated
         print('Manual transmission activated.')
     else
@@ -112,117 +189,47 @@ RegisterCommand(
     end
 )
 
--- Toggle manual transmission
-RegisterNetEvent('QBCore:Client:OnPlayerLoaded')
-AddEventHandler(
-    'QBCore:Client:OnPlayerLoaded',
-    function()
-        isLoggedIn = true
-    end
-)
-
 -- Handle key presses for shifting gears and clutch management
 CreateThread(
     function()
         while true do
             Wait(0)
-            if isLoggedIn then
-                local vehicle = GetVehiclePedIsIn(PlayerPedId(), false)
+            vehicle = GetVehiclePedIsIn(PlayerPedId(), false)
 
-                -- Ensure the vehicle exists and manual transmission is active
-                if vehicle ~= 0 and manualTransmissionActive then
-                    -- Get current speed and speed vector
-                    local speedV = GetEntitySpeedVector(vehicle, true)
-                    local speedMph = getSpeedInMph(vehicle)
+            -- Check if player is the driver
+            if vehicle ~= 0 and GetPedInVehicleSeat(vehicle, -1) == PlayerPedId() then
+                -- If alwaysStick is true, force manual transmission for all vehicles
+                if Config.alwaysStick then
+                    activateManualTransmission() -- Activate manual for all vehicles
+                else
+                    -- Ensure the vehicle exists and plate check hasn't been done
+                    if not checkPlate then
+                        local plate = GetVehicleNumberPlateText(vehicle)
 
-                    if currentGear == 0 then
-                        Citizen.InvokeNative(GetHashKey('SET_VEHICLE_CLUTCH') & 0xFFFFFFFF, vehicle, -1.0)
-                    end
-
-                    -- Clutch control
-                    if currentGear ~= 0 then
-                        -- Clutch should engage when UpShiftKey is pressed
-                        if IsControlJustPressed(0, 21) then
-                            print('Clutch pressed')
-                            Citizen.InvokeNative(GetHashKey('SET_VEHICLE_CLUTCH') & 0xFFFFFFFF, vehicle, -1.0)
-                        elseif IsControlJustReleased(0, 21) then
-                            Citizen.InvokeNative(GetHashKey('SET_VEHICLE_CLUTCH') & 0xFFFFFFFF, vehicle, 1.0)
+                        -- Ensure the plate is valid
+                        if plate ~= nil and plate ~= '' then
+                            checkVehicleTransmission(plate) -- Check the transmission type from server
+                            checkPlate = true -- Mark that we have checked the plate
+                        else
+                            print('Error: No valid plate detected.')
                         end
                     end
 
-                    -- Enable or disable controls based on gear and speed
-                    if currentGear >= 0 and speedMph > 0 and speedV.y > 0 then
-                        EnableControlAction(0, 72, true) -- Enable S for braking or reverse
-                    else
-                        DisableControlAction(0, 72, true) -- Disable S for braking or reverse
-                    end
-
-                    -- Special case for reverse gear
-                    if currentGear == -1 then
-                        EnableControlAction(0, 72, true) -- Enable S for reverse
-                        DisableControlAction(0, 71, true) -- Disable W for braking or reverse
-                    end
-
-                    -- Tachometer and gear display update
-                    if displayRPM then
-                        local rpm = (GetVehicleCurrentRpm(vehicle) * 10000) - 1000 -- Convert to RPM
-                        SendNUIMessage({action = 'updateRPM', rpm = rpm})
-                    end
-
-                    -- Handle gear shifts
-                    if IsControlJustPressed(0, Config.UpShiftKey) then
-                        Upshift()
-                    elseif IsControlJustPressed(0, Config.DownShiftKey) then
-                        DownShift()
-                    end
-
-                    -- Send gear data and update RPM
-                    local rpm = (GetVehicleCurrentRpm(vehicle) * 10000) - 1000 -- Convert to RPM
-                    SendNUIMessage({type = 'updateRPM', rpm = rpm})
-                    sendGearDataToUI()
-                elseif manualTransmissionActive then
-                    -- Exit vehicle handling: deactivate manual transmission when not in a vehicle
-                    if vehicle == 0 then
-                        ManualOff()
-                    else
-                        -- Reset car to automatic transmission
-                        SetVehicleHandlingInt(
-                            vehicle,
-                            'CCarHandlingData',
-                            'strAdvancedFlags',
-                            AUTOMATIC_TRANSMISSION_FLAGS
-                        )
-                        EnableControlAction(0, 72, true) -- Enable S for reverse
-                        EnableControlAction(0, 71, true) -- Enable W for braking or reverse
-                        Citizen.InvokeNative(GetHashKey('SET_VEHICLE_CLUTCH') & 0xFFFFFFFF, vehicle, 1.0)
+                    -- Handle transmission if it's already active
+                    if manualTransmissionActive then
+                        handleTransmissionControl() -- Call the new function to manage clutch, gears, and display updates
                     end
                 end
+            end
+
+            -- Reset plate check if player leaves the vehicle or isn't the driver
+            if vehicle == 0 or GetPedInVehicleSeat(vehicle, -1) ~= PlayerPedId() then
+                checkPlate = false
+                ManualOff() -- Ensure transmission is deactivated and UI is hidden when leaving the vehicle
             end
         end
     end
 )
-
-function mapRPM(actualRPM)
-    --- Define the min and max values for actual RPM and target percentage range
-    local minActualRPM = 1037.5
-    local maxActualRPM = 1068
-    local minTarget = 0
-    local maxTarget = 9000
-
-    -- Ensure the actualRPM is within the defined range to avoid errors
-    if actualRPM < minActualRPM then
-        actualRPM = minActualRPM
-    elseif actualRPM > maxActualRPM then
-        actualRPM = maxActualRPM
-    end
-
-    -- Calculate the mapped value based on the formula
-    local mappedValue =
-        ((actualRPM - minActualRPM) / (maxActualRPM - minActualRPM)) * (maxTarget - minTarget) + minTarget
-
-    -- Return the result
-    return mappedValue
-end
 
 -- Get vehicle speed in meters per second
 function getVehicleSpeed(vehicle)
