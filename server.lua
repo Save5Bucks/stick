@@ -66,44 +66,28 @@ function checkVehicleTransmission(plate, callback)
     )
 end
 
--- Server-side function to check vehicle transmission type from the database using oxmysql
-RegisterNetEvent('checkVehicleTransmission')
-AddEventHandler(
-    'checkVehicleTransmission',
-    function(plate)
-        local src = source
-        -- Use oxmysql to query the database
-        MySQL.query(
-            'SELECT tmission FROM player_vehicles WHERE plate = ?',
-            {plate},
-            function(result)
-                if result and result[1] then
-                    local tmissionValue = result[1].tmission
-                    -- Print the raw value of tmission to the server console
-                    print('tmission value for plate ' .. plate .. ': ' .. tostring(tmissionValue))
-
-                    -- Check if it's manual (1) or automatic (0), or another value
-                    if tmissionValue == true then
-                        print('Manual transmission detected for plate: ' .. plate)
-                        TriggerClientEvent('receiveTransmissionType', src, true)
-                    elseif tmissionValue == false then
-                        print('Automatic transmission detected for plate: ' .. plate)
-                        TriggerClientEvent('receiveTransmissionType', src, false)
-                    else
-                        print(
-                            'Unknown transmission type for plate: ' .. plate .. ', value: ' .. tostring(tmissionValue)
-                        )
-                        TriggerClientEvent('receiveTransmissionType', src, false)
-                    end
+-- Check transmission type from the database using oxmysql
+function checkVehicleTransmission(plate, callback)
+    MySQL.query(
+        'SELECT tmission FROM player_vehicles WHERE plate = ?',
+        {plate},
+        function(result)
+            if result and result[1] then
+                local tmissionValue = result[1].tmission
+                -- Check if it's manual (1) or automatic (0), or another value
+                if tmissionValue == true then
+                    callback(true) -- Manual transmission
+                elseif tmissionValue == false then
+                    callback(false) -- Automatic transmission
                 else
-                    print('No result found for plate ' .. plate)
-                    TriggerClientEvent('receiveTransmissionType', src, false)
+                    callback(nil) -- Unknown transmission
                 end
+            else
+                callback(nil) -- No result found
             end
-        )
-    end
-)
-
+        end
+    )
+end
 -- Export function to set vehicle transmission in the database
 -- 0 = automatic, 1 = manual
 exports(
@@ -120,6 +104,27 @@ exports(
                     )
                 else
                     print('No vehicle found with plate: ' .. plate)
+                end
+            end
+        )
+    end
+)
+
+-- Event for checking vehicle transmission
+RegisterNetEvent('checkVehicleTransmission')
+AddEventHandler(
+    'checkVehicleTransmission',
+    function(plate)
+        local src = source
+        checkVehicleTransmission(
+            plate,
+            function(isManual)
+                if isManual ~= nil then
+                    -- Trigger the client event with the transmission type
+                    TriggerClientEvent('receiveTransmissionType', src, isManual)
+                else
+                    -- If transmission type is unknown or no result
+                    TriggerClientEvent('receiveTransmissionType', src, false)
                 end
             end
         )

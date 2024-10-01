@@ -45,23 +45,48 @@ AddEventHandler(
     end
 )
 
+-- Fetch and validate the plate
+function validateAndCheckPlate(vehicle)
+    local plate = GetVehicleNumberPlateText(vehicle)
+    Wait(100) -- Wait for the plate to be fetched properly
+    -- Ensure the plate is valid and has been fetched properly
+    if plate and plate ~= '' and string.len(plate) > 0 then
+        checkVehicleTransmission(plate) -- Check the transmission type from the server
+        print('Plate found: ' .. plate)
+        checkPlate = true -- Mark the plate check as done
+    else
+        print('Error: No valid plate detected.')
+        checkPlate = false
+    end
+end
+
 -- Handle transmission control logic
 function handleTransmissionControl()
     local speedV = GetEntitySpeedVector(vehicle, true)
     local speedMph = getSpeedInMph(vehicle)
+    local rpm = GetVehicleCurrentRpm(vehicle) * 10000 -- Convert to RPM
+
+    -- Clutch control for shift key and throttle to max revs
+    if IsControlPressed(0, Config.ClutchKey) and IsControlPressed(0, 71) then -- Clutch and "W" key are pressed
+        Citizen.InvokeNative(GetHashKey('SET_VEHICLE_CURRENT_RPM') & 0xFFFFFFFF, vehicle, Config.maxRpm / 10000) -- Rev to max RPM
+        Citizen.InvokeNative(GetHashKey('SET_VEHICLE_CLUTCH') & 0xFFFFFFFF, vehicle, -1.0)
+    elseif IsControlPressed(0, Config.ClutchKey) then
+        -- Disengage clutch when shift key is held
+    elseif IsControlReleased(0, Config.ClutchKey) and IsControlPressed(0, 71) then
+        -- Re-engage clutch and allow the vehicle to move forward when W is pressed
+        Citizen.InvokeNative(GetHashKey('SET_VEHICLE_CLUTCH') & 0xFFFFFFFF, vehicle, 1.0)
+    end
+
+    -- Apply drag when RPM exceeds redline, speed is over Config.DragMPH, and W isn't pressed
+    if rpm > Config.RedlineRPM and speedMph > Config.DragMPH and not IsControlPressed(0, 71) then -- 71 is the control for "W" (throttle)
+        local dragAmount = Config.RedlineDrag
+        -- Apply gentle drag using ApplyForceToEntity
+        ApplyForceToEntity(vehicle, 1, 0.0, -dragAmount, 0.0, 0.0, 0.0, false, true, true, false, true)
+    end
 
     -- Clutch control for currentGear = 0
     if currentGear == 0 then
         Citizen.InvokeNative(GetHashKey('SET_VEHICLE_CLUTCH') & 0xFFFFFFFF, vehicle, -1.0)
-    end
-
-    -- Clutch control for non-zero gears
-    if currentGear ~= 0 then
-        if IsControlJustPressed(0, 21) then
-            Citizen.InvokeNative(GetHashKey('SET_VEHICLE_CLUTCH') & 0xFFFFFFFF, vehicle, -1.0)
-        elseif IsControlJustReleased(0, 21) then
-            Citizen.InvokeNative(GetHashKey('SET_VEHICLE_CLUTCH') & 0xFFFFFFFF, vehicle, 1.0)
-        end
     end
 
     -- Enable or disable controls based on gear and speed
@@ -79,7 +104,6 @@ function handleTransmissionControl()
 
     -- Tachometer and gear display update
     if displayRPM then
-        local rpm = GetVehicleCurrentRpm(vehicle) * 10000 - 1000 -- Convert to RPM
         SendNUIMessage({type = 'updateRPM', rpm = rpm})
     end
 
@@ -209,15 +233,7 @@ CreateThread(
                 else
                     -- Ensure the vehicle exists and plate check hasn't been done
                     if not checkPlate then
-                        local plate = GetVehicleNumberPlateText(vehicle)
-
-                        -- Ensure the plate is valid
-                        if plate ~= nil and plate ~= '' then
-                            checkVehicleTransmission(plate) -- Check the transmission type from server
-                            checkPlate = true -- Mark that we have checked the plate
-                        else
-                            print('Error: No valid plate detected.')
-                        end
+                        validateAndCheckPlate(vehicle) -- Check the vehicle's plate
                     end
 
                     -- Handle transmission if it's already active

@@ -3,7 +3,7 @@ game 'gta5'
 
 author 'Save5Bucks'
 description 'Manual Transmission Script using QB-Core'
-version '1.0.6'
+version '1.0.7'
 
 -- Client scripts
 client_scripts {

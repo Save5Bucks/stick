@@ -52,18 +52,18 @@ window.addEventListener('message', function (event) {
         // Handle RPM updates (if any)
         if (data.rpm !== undefined) {
             const rpm = !isNaN(data.rpm) ? Number(data.rpm) : 0; // Ensure RPM is a valid number
-            // rpmDisplay.innerText = `RPM: ${rpm.toFixed(0)}`;
 
             const percentage = Math.min(((rpm + 1000) / 10000) * 100, 100); // Scale RPM to 0-100%
             fill.style.width = percentage + '%';
+            console.log(percentage);
 
             // Change color based on RPM percentage for tachometer
-            if (percentage < 93) {
-                fill.style.backgroundColor = 'white';
-            } else if (percentage < 95) {
-                fill.style.backgroundColor = 'green';
+            if (percentage < 90) {
+                fill.style.backgroundColor = 'rgb(255, 255, 255)'; // White
+            } else if (percentage < 99.5) {
+                fill.style.backgroundColor = 'rgb(0, 255, 0)'; // Green
             } else {
-                fill.style.backgroundColor = 'red';
+                fill.style.backgroundColor = 'rgb(255, 0, 0)'; // Red
             }
         }
     }
